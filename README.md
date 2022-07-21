@@ -14,4 +14,5 @@ Moreover it is possible to send a multipacket message related to the GNSS connec
 
 In the current implementation it is possible to send messages related to: the yaw-pitch-roll position of the vehicle, its speed and course over ground and its GNSS RTK corrected positioning 
 
-To install the dependecies needed, download `requirements.txt` and run in your terminal `pip install -r requirements.txt`
+To install the dependecies needed, download `requirements.txt` and run in your terminal
+`pip install -r requirements.txt`
