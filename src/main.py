@@ -1,5 +1,7 @@
-from canSend import DataToCan, CoG, MultiPacket
-from DataSet import dataRetrieve
+from Multipacket import MultiPacket
+from dataRetrieve import dataRetrieve
+from DataToCan import DataToCan
+from CoG import CoG
 import time 
 import numpy as np 
 from timeit import default_timer as timer
