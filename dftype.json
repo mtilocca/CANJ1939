@@ -1,0 +1,21 @@
+{
+    "alphaFR": "float16",
+    "alphaFL": "float16",
+    "Speed": "float16",
+    "Rpm": "float16",
+    "frame": "int",
+    "GearRatio": "float16",
+    "alphaAxle": "float16",
+    "Ofl": "float16",
+    "Ofr": "float16",
+    "Orl": "float16",
+    "Orr": "float16",
+    "lat": "float32",
+    "lon": "float32",
+    "h": "float16",
+    "pitch": "float16",
+    "yaw": "float16",
+    "roll": "float16",
+    "travelD": "float16"
+  }
+  
