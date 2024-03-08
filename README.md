@@ -20,8 +20,7 @@ To install the required dependencies, download the `requirements.txt` file and e
 
 ```sh
 pip install -r requirements.txt
-
-
+```
 
 ## Hardware Requirements
 
