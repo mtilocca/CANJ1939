@@ -52,7 +52,7 @@ MultiData = dataSet.retrieve(['lat', 'lon', 'h'])
 #  --------------------- STEP 2] ------------------
 
 
-IDs = [233904404, 167248404, 167248148]
+IDs = [0, 0, 0]
 PGNs = [0x0000, 0x0000, 0x0000] # Put here your PGN 
 
 

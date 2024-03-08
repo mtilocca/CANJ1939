@@ -11,3 +11,8 @@ This repository illustrates how to send single and multipacket messages to a CAN
 
 It is worth noting that the code also allows the use of custom counters which are often found in J1939 payloads. 
 Moreover it is possible to send a multipacket message related to the GNSS connection of the system or simulator used. 
+
+In the current implementation it is possible to send messages related to: the yaw-pitch-roll position of the vehicle, its speed and course over ground and its GNSS RTK corrected positioning 
+
+To install the dependecies needed, download `requirements.txt` and run in your terminal
+`pip install -r requirements.txt`
