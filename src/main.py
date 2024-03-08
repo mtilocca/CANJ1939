@@ -1,120 +1,80 @@
-from Multipacket import MultiPacket
+from multiprocessing import Process
+import time
 from dataRetrieve import dataRetrieve
 from DataToCan import DataToCan
 from CoG import CoG
-import time 
-import numpy as np 
-from timeit import default_timer as timer
-import multiprocessing # could be used to speed up the process 
-import can 
-import j1939
+from MultiPacket import MultiPacket
 
+class CanBusSystem:
+    def __init__(self):
+        self.counter = 0  # Sequence ID counter
+        self.dataSet = dataRetrieve()
 
+        # Define PGNs and IDs
+        self.PGNs = [0x0000, 0x0000, 0x0000]  # Example PGNs
+        self.IDs = [0, 0, 0]
 
-'''
-LOGIC OF THE CODE: 
+        # Initialize CAN messages
+        self.initialize_messages()
 
-1] we retrieve the data fromt the .txt file and sort it according to the names of the columns in the .txt file. The names need to be matching otherwise 
-the uopdate function in the canSend.py classes cannot retrieve the and update the data which is sent to the bus 
+    def initialize_messages(self):
+        """Initialize the objects corresponding to the CAN messages."""
+        Wgs84 = self.dataSet.retrieve(['lat', 'lon'])
+        Ypr = self.dataSet.retrieve(['yaw', 'pitch', 'roll'])
+        CoG_Data = self.dataSet.retrieve(['yaw', 'Speed'])
+        MultiData = self.dataSet.retrieve(['lat', 'lon', 'h'])
 
-2] initialize the objects corresponding to the messages 
+        self.MsgWGS = DataToCan(Wgs84, self.IDs[2], False, False, self.PGNs[1], 2)
+        self.MsgYPR = DataToCan(Ypr, self.IDs[0], False, True, self.PGNs[0], 3)
+        self.MsgCoG = CoG(CoG_Data, self.IDs[1], self.PGNs[2], 7)
+        self.MsgMulti = MultiPacket(MultiData)
 
-3] while loop where data is streamed. The multipacket message is sent only once per second and the sequence ID is update once per second as well 
-'''
+    def seq_id(self):
+        """Update and return the new sequence ID."""
+        self.counter = (self.counter + 1) % 252  # Loop back after 251
+        return self.counter
 
+    def send_message(self, message, counter):
+        """Function to send a single message, intended to be used in a separate process."""
+        message.execute(counter)
 
-def seq_ID(counter):
+    def execute_messages(self):
+        """Execute CAN messages in parallel."""
+        processes = []
+        # Prepare processes for each message that needs to be sent
+        processes.append(Process(target=self.send_message, args=(self.MsgWGS, None)))
+        processes.append(Process(target=self.send_message, args=(self.MsgYPR, self.counter)))
+        processes.append(Process(target=self.send_message, args=(self.MsgCoG, self.counter)))
 
-    '''
-    Function used to update the sequence ID 
-    
-    '''
-    if counter <= 251: 
-        counter +=1
-    else:
-        counter = 0
-       # counter +=1
+        # Start all processes
+        for process in processes:
+            process.start()
 
-    new_counter = counter 
-    return new_counter 
+        # Wait for all processes to complete
+        for process in processes:
+            process.join()
 
+    def run(self):
+        """Main loop for sending CAN messages."""
+        try:
+            start_time = time.time()
+            while True:
+                if time.time() - start_time >= 1:
+                    self.counter = self.seq_id()  # Update counter once per second
+                    self.MsgMulti.execute(self.counter)  # Send multipacket once per second
+                    start_time = time.time()
 
-# Data retrieve from the .txt file   -- STEP 1] 
+                self.execute_messages()
+        except KeyboardInterrupt:
+            self.shutdown()
 
-dataSet = dataRetrieve()
-Wgs84 = dataSet.retrieve(['lat', 'lon'])
-Ypr = dataSet.retrieve(['yaw', 'pitch', 'roll'])
-CoG_Data = dataSet.retrieve(['yaw', 'Speed'])
-MultiData = dataSet.retrieve(['lat', 'lon', 'h'])
-# IDS [(yaw, pitch, roll), (course over ground & speed over ground), (latitude & longitude), 
+    def shutdown(self):
+        """Shut down CAN bus interfaces properly."""
+        self.MsgWGS.shutBus()
+        self.MsgYPR.shutBus()
+        self.MsgCoG.shutBus()
+        print("CAN bus interfaces have been shut down.")
 
-
-#  --------------------- STEP 2] ------------------
-
-
-IDs = [0, 0, 0]
-PGNs = [0x0000, 0x0000, 0x0000] # Put here your PGN 
-
-
-
-MsgWGS = DataToCan(Wgs84, IDs[2], False, False, PGNs[1], 2)
-MsgYPR = DataToCan(Ypr, IDs[0], False, True, PGNs[0], 3)
-MsgCoG = CoG(CoG_Data, IDs[1], PGNs[2], 7) 
-MsgMulti = MultiPacket(MultiData)
-
-
-# Sending the data: 
-counter = 0 # seq ID counter initialization 0
-start = 0
-end = 0
-res = 3 
-ctrl = 0
-
-
-def timingSt():
-    return time.time()
-
-try: 
-    while True:
-        #time.sleep(1)
-        #ctrl = ctrl+1 
-
-
-        #if ctrl == 10:
-        
-        #ctrl = 0
-
-        if ctrl == 0:
-            start = timingSt()
-            ctrl = 1
-
-        print(counter) # update the seq_ID counter for data synchronization -- update counter only once per sec 
-
-        elapsed = time.time() - start
-
-        if int(elapsed) == 1:  # multipacket sent only once per second 
-            counter = seq_ID(counter)
-            MsgMulti.execute(counter)
-            start = 0 
-            MsgWGS.execute(None)
-            MsgYPR.execute(counter)
-            MsgCoG.execute(counter)
-            ctrl = 0
-        
-
-        else:
-            MsgWGS.execute(None)
-            MsgYPR.execute(counter)
-            MsgCoG.execute(counter)
-        
-    
-except KeyboardInterrupt:
-
-    MsgWGS.shutBus()
-    MsgYPR.shutBus()
-    MsgCoG.shutBus()
-    
-    # shut down the bus 1
-    # shut down the bus 2
-    # shut down the bus 3 
-
+if __name__ == "__main__":
+    can_bus_system = CanBusSystem()
+    can_bus_system.run()
