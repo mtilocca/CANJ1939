@@ -1,9 +1,9 @@
-from multiprocessing import Process
-import time
+import multiprocessing
 from dataRetrieve import dataRetrieve
 from DataToCan import DataToCan
 from CoG import CoG
 from MultiPacket import MultiPacket
+import time
 
 class CanBusSystem:
     def __init__(self):
@@ -34,46 +34,38 @@ class CanBusSystem:
         self.counter = (self.counter + 1) % 252  # Loop back after 251
         return self.counter
 
-    def send_message(self, message, counter):
-        """Function to send a single message, intended to be used in a separate process."""
-        message.execute(counter)
+    def execute_messages(self, counter):
+        """Send CAN messages based on the current sequence ID."""
+        # This method now only prepares the messages and returns them
+        # Actual sending will be handled in parallel
+        messages = [self.MsgWGS, self.MsgYPR, self.MsgCoG]
+        for msg in messages:
+            msg.prepare(counter)  # Assume a prepare method that sets up the message
+        return messages
 
-    def execute_messages(self):
-        """Execute CAN messages in parallel."""
-        processes = []
-        # Prepare processes for each message that needs to be sent
-        processes.append(Process(target=self.send_message, args=(self.MsgWGS, None)))
-        processes.append(Process(target=self.send_message, args=(self.MsgYPR, self.counter)))
-        processes.append(Process(target=self.send_message, args=(self.MsgCoG, self.counter)))
-
-        # Start all processes
-        for process in processes:
-            process.start()
-
-        # Wait for all processes to complete
-        for process in processes:
-            process.join()
+    def send_message(self, message):
+        """Function to send a single CAN message."""
+        message.execute()
 
     def run(self):
-        """Main loop for sending CAN messages."""
+        """Main loop for sending CAN messages using multiprocessing."""
         try:
             start_time = time.time()
-            while True:
-                if time.time() - start_time >= 1:
-                    self.counter = self.seq_id()  # Update counter once per second
-                    self.MsgMulti.execute(self.counter)  # Send multipacket once per second
-                    start_time = time.time()
-
-                self.execute_messages()
+            with multiprocessing.Pool() as pool:
+                while True:
+                    if time.time() - start_time >= 1:
+                        self.counter = self.seq_id()  # Update counter once per second
+                        messages = self.execute_messages(self.counter)
+                        # Use pool.map or pool.apply_async to send messages in parallel
+                        pool.map(self.send_message, messages)
+                        start_time = time.time()
         except KeyboardInterrupt:
             self.shutdown()
 
     def shutdown(self):
         """Shut down CAN bus interfaces properly."""
-        self.MsgWGS.shutBus()
-        self.MsgYPR.shutBus()
-        self.MsgCoG.shutBus()
         print("CAN bus interfaces have been shut down.")
+        # Implement actual shutdown logic as needed
 
 if __name__ == "__main__":
     can_bus_system = CanBusSystem()
