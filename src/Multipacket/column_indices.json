@@ -1,0 +1,21 @@
+{
+    "alphaFR": 0,
+    "alphaFL": 1,
+    "Speed": 2,
+    "Rpm": 3,
+    "frame": 4,
+    "GearRatio": 5,
+    "alphaAxle": 6,
+    "Ofl": 7,
+    "Ofr": 8,
+    "Orl": 9,
+    "Orr": 10,
+    "lat": 11,
+    "lon": 12,
+    "h": 13,
+    "pitch": 14,
+    "yaw": 15,
+    "roll": 16,
+    "travelD": 17
+  }
+  

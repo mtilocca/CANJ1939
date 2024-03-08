@@ -1,9 +1,10 @@
-import multiprocessing
-from dataRetrieve import dataRetrieve
-from DataToCan import DataToCan
-from CoG import CoG
-from MultiPacket import MultiPacket
+from dataRetrieve.dataRetrieve import dataRetrieve
+from DataToCan.DataToCan import DataToCan
+from CourseOverGround.CoG import CoG
+from Multipacket.Multipacket import MultiPacket
+
 import time
+import multiprocessing
 
 class CanBusSystem:
     def __init__(self):
